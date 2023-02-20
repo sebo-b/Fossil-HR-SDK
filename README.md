@@ -2,7 +2,7 @@
 
 ## Credits
 
-This repo is based on fantastic work done by @dakhnod in his [Fossil Hybrid HR SDK](https://github.com/dakhnod/Fossil-HR-SDK). Honestly, none of this work would be possible without reverse engineering done by @dakhnod. If you find this work useful, pls remember to give a star to the original [Fossil Hybrid HR SDK](https://github.com/dakhnod/Fossil-HR-SDK). You may also find the original repo and tools better than this one.
+This repo is based on fantastic work done by [Daniel Dakhno](https://github.com/dakhnod) in his [Fossil Hybrid HR SDK](https://github.com/dakhnod/Fossil-HR-SDK). Honestly, none of this work would be possible without reverse engineering done by [Daniel Dakhno](https://github.com/dakhnod). If you find this work useful, pls remember to give a star to the original [Fossil Hybrid HR SDK](https://github.com/dakhnod/Fossil-HR-SDK). You may also find the original repo and tools better than this one.
 
 It is also based on the opensource [Fossil HR Watchface](https://codeberg.org/Freeyourgadget/fossil-hr-watchface) developed by [Arjan Schrijver](https://codeberg.org/arjan5), [Daniel Dakhno](https://codeberg.org/dakhnod), [mvn23](https://codeberg.org/mvn23) and [Morten Hannemose](https://codeberg.org/MortenHannemose) for the [Gadgetbridge project](https://gadgetbridge.org/).
 
