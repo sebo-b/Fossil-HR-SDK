@@ -24,6 +24,32 @@ I had a couple of reasons to start this work:
 
 # Tools
 
+## Installing tools
+
+The recommended way to install tools is to create a separate virtual envirnoment for Python and install tools via pip.
+
+```
+# Create and activate virtual envirnoment
+$ mkdir Fossil-Tools
+$ cd Fossil-Tools
+$ python3 -m venv --prompt "Fossil-Tools" .venv
+$ . .venv/bin/activate
+(Fossil-Tools)$ pip install --upgrade pip
+(Fossil-Tools)$ pip install wheel
+```
+
+```
+# Install fossil tools
+(Fossil-Tools)$ pip install git+https://github.com/sebo-b/Fossil-Hybrid-Tools.git
+
+# Check if it works
+(Fossil-Tools)$ fossil_image
+usage: fossil_image [-h] {encode,enc,decode,dec} ...
+fossil_image: error: the following arguments are required: {encode,enc,decode,dec}
+```
+
+## Tools usage
+
 TODO
 
 # Documentation
