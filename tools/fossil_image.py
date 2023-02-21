@@ -2,16 +2,22 @@ import argparse
 import re
 from PIL import Image
 from math import isqrt
+from io import BytesIO
 
 def encodeRLE(input, output, resize,**_):
 
     image = Image.open(input)
 
     if image.mode != 'RGBA' and image.mode != 'RGB':
-        raise Exception('image bands have to be RGB or RGBA')
+        print('image bands have to be RGB or RGBA')
+        exit(1)
 
     width = int(resize[0] or image.width)
     height = int(resize[1] or image.height)
+
+    if width > 0xFF or height > 0xFF:
+        print('Image is too big. Maximum resolution is 256x256')
+        exit(1)
 
     if width != image.width or height != image.height:
         print(f"Resize from {image.width}x{image.height} to {width}x{height}")
@@ -53,13 +59,15 @@ def encodeRAW(input, output, resize, **_):
     image = Image.open(input)
 
     if image.mode != 'RGBA' and image.mode != 'RGB':
-        raise Exception('image bands have to be RGB or RGBA')
+        print('image bands have to be RGB or RGBA')
+        exit(1)
 
     width = int(resize[0] or image.width)
     height = int(resize[1] or image.height)
 
     if width != height:
-        raise Exception('image must be square for raw compression')
+        print('image must be square for raw compression')
+        exit(1)
 
     if width != image.width or height != image.height:
         print(f"Resize from {image.width}x{image.height} to {width}x{height}")
@@ -152,6 +160,40 @@ def decodeRLE(input, output, **_):
 
 def decode(args):
 
+    if args['format'] == 'auto':
+
+        # I don't want to use seek and tell as we can get streams which are not seekable
+        MAX_FILE_SIZE = 4+0xFF*0xFF*2   #256x256x2bytes + 2byte size + 2byte end marker
+        buffer = args['input'].read(MAX_FILE_SIZE+1)
+        if len(buffer) > MAX_FILE_SIZE:
+            print("Format autodetection failed, file is too big.")
+            exit(1)
+
+        w = isqrt(len(buffer))
+        possibleRAW = (w*w == len(buffer))
+
+        possibleRLE = (len(buffer) % 2 == 0)
+        if possibleRLE:
+            possibleRLE = buffer[-2:] == b'\xff\xff'
+        if possibleRLE:
+            numOfPixels = sum(buffer[2:-2:2])
+            possibleRLE = (buffer[0]*buffer[1] == numOfPixels)
+
+        if not possibleRAW and not possibleRLE:
+            print("Format autodetection failed, unknown file format.")
+            exit(1)
+        elif possibleRLE and possibleRAW:
+            print("RLE format detected, but it may be RAW. Decoding as RLE.")
+            args['format'] = 'rle'
+        elif possibleRLE:
+            print("RLE format detected.")
+            args['format'] = 'rle'
+        else:
+            print("RAW format detected.")
+            args['format'] = 'raw'
+
+        args['input'] = BytesIO(buffer)
+
     if args['format'] == 'rle':
         decodeRLE(**args)
     else:
@@ -221,9 +263,9 @@ def main():
     decode_parser.add_argument(
         "-f","--format",
         required=False,
-        default="rle",
-        choices=['rle','raw'],
-        help="Format of the input image, default: rle")
+        default="auto",
+        choices=['auto','rle','raw'],
+        help="Format of the input image, default autodetect format")
 
     args = optParser.parse_args()
     args.command(vars(args))
