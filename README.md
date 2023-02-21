@@ -24,6 +24,14 @@ I had a couple of reasons to start this work:
 
 # Tools
 
+There are certain tools included in this repository:
+| Command | Description |
+| --- | --- |
+| fossil_image | Encodes/decodes images between PNG and Fossil Hybrid firmware format |
+| fossil_wapp | Packs/unpacks resources into Fossil Hybrid applications (WIP) |
+
+Each of the tool provides pretty descriptive help if called with `--help`. You can also find examples with usage of these apps in the [usage section](#tools-usage).
+
 ## Installing tools
 
 The recommended way to install tools is to create a separate virtual envirnoment for Python and install tools via pip.
@@ -47,9 +55,41 @@ usage: fossil_image [-h] {encode,enc,decode,dec} ...
 fossil_image: error: the following arguments are required: {encode,enc,decode,dec}
 ```
 
+If you want to run any of the tool without venv activation (e.g. from Makefile) you can simply call:
+```
+ROOT_PATH/Fossil-Tools/.venv/bin/fossil_image
+```
+
 ## Tools usage
 
-TODO
+### fossil_image
+
+To convert PNG into RLE:
+```
+fossil_image encode -i icon_home.png -o icon_home
+```
+To convert and scale PNG into RLE:
+```
+fossil_image encode -i icon_home.png -o icon_home -s 32x32
+```
+To convert PNG into RAW (note that in almost every case RLE format produces smaller files):
+```
+fossil_image encode -i background.png -o background.raw -f raw
+```
+To convert RLE or RAW (autodetection used) back to PNG:
+```
+fossil_image decode -i background -o background.png
+```
+To convert RAW (no autodetection) back to PNG:
+```
+fossil_image decode -i background -o background.png -f raw
+```
+To get help:
+```
+fossil_image -h
+fossil_image encode -h
+fossil_image decode -h
+```
 
 # Documentation
 
