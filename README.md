@@ -35,7 +35,6 @@ $ cd Fossil-Tools
 $ python3 -m venv --prompt "Fossil-Tools" .venv
 $ . .venv/bin/activate
 (Fossil-Tools)$ pip install --upgrade pip
-(Fossil-Tools)$ pip install wheel
 ```
 
 ```

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "Fossil_Tools"
+license = {text = "MIT License"}
+dependencies = [
+    "Pillow",
+    "crc32c",
+]
+version = "0.5.0"
+
+[project.scripts]
+fossil_image = "fossil_tools.fossil_image:main"
+
+[tool.setuptools.package-dir]
+fossil_tools = "tools"
+
