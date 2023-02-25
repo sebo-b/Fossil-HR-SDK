@@ -27,8 +27,8 @@ I had a couple of reasons to start this work:
 There are certain tools included in this repository:
 | Command | Description |
 | --- | --- |
-| fossil_image | Encodes/decodes images between PNG and Fossil Hybrid firmware format |
-| fossil_wapp | Packs/unpacks resources into Fossil Hybrid applications (WIP) |
+| wapp_image | Encodes/decodes images between PNG and Fossil Hybrid firmware format |
+| wapp | Packs/unpacks resources into Fossil Hybrid applications (WIP) |
 
 Each of the tool provides pretty descriptive help if called with `--help`. You can also find examples with usage of these apps in the [usage section](#tools-usage).
 
@@ -50,45 +50,45 @@ $ . .venv/bin/activate
 (Fossil-Tools)$ pip install git+https://github.com/sebo-b/Fossil-Hybrid-Tools.git
 
 # Check if it works
-(Fossil-Tools)$ fossil_image
-usage: fossil_image [-h] {encode,enc,decode,dec} ...
-fossil_image: error: the following arguments are required: {encode,enc,decode,dec}
+(Fossil-Tools)$ wapp_image
+usage: wapp_image [-h] {encode,enc,decode,dec} ...
+wapp_image: error: the following arguments are required: {encode,enc,decode,dec}
 ```
 
 If you want to run any of the tool without venv activation (e.g. from Makefile) you can simply call:
 ```
-ROOT_PATH/Fossil-Tools/.venv/bin/fossil_image
+ROOT_PATH/Fossil-Tools/.venv/bin/wapp_image
 ```
 
 ## Tools usage
 
-### fossil_image
+### wapp_image
 
 To convert PNG into RLE:
 ```
-fossil_image encode -i icon_home.png -o icon_home
+wapp_image encode -i icon_home.png -o icon_home
 ```
 To convert and scale PNG into RLE:
 ```
-fossil_image encode -i icon_home.png -o icon_home -s 32x32
+wapp_image encode -i icon_home.png -o icon_home -s 32x32
 ```
 To convert PNG into RAW (note that in almost every case RLE format produces smaller files):
 ```
-fossil_image encode -i background.png -o background.raw -f raw
+wapp_image encode -i background.png -o background.raw -f raw
 ```
 To convert RLE or RAW (autodetection used) back to PNG:
 ```
-fossil_image decode -i background -o background.png
+wapp_image decode -i background -o background.png
 ```
 To convert RAW (no autodetection) back to PNG:
 ```
-fossil_image decode -i background -o background.png -f raw
+wapp_image decode -i background -o background.png -f raw
 ```
 To get help:
 ```
-fossil_image -h
-fossil_image encode -h
-fossil_image decode -h
+wapp_image -h
+wapp_image encode -h
+wapp_image decode -h
 ```
 
 # Documentation

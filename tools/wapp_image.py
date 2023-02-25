@@ -225,7 +225,8 @@ def main():
         type=argparse.FileType('wb'),
         help="Output file")
 
-    subparsers = optParser.add_subparsers(title="Commands",required=True)
+    # dest= is needed to handle empty parameter list, see https://bugs.python.org/issue29298
+    subparsers = optParser.add_subparsers(title="Commands",required=True, dest="command")
 
     def resize_type(s):
         m = re.match('([0-9]+)?(?:x([0-9]+))?$',s)
@@ -238,7 +239,7 @@ def main():
         aliases=['enc'],
         help='Encodes PNG into Fossil image format ',
         parents=[common_options])
-    encode_parser.set_defaults(command=encode)
+    encode_parser.set_defaults(cmd_func=encode)
     encode_parser.add_argument(
         "-s","--resize",
         required=False,
@@ -259,7 +260,7 @@ def main():
         aliases=['dec'],
         help='Decodes Fossil image format to PNG',
         parents=[common_options])
-    decode_parser.set_defaults(command=decode)
+    decode_parser.set_defaults(cmd_func=decode)
     decode_parser.add_argument(
         "-f","--format",
         required=False,
@@ -268,7 +269,7 @@ def main():
         help="Format of the input image, default autodetect format")
 
     args = optParser.parse_args()
-    args.command(vars(args))
+    args.cmd_func(vars(args))
 
 
 if __name__ == '__main__':
