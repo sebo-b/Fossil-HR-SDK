@@ -1,8 +1,8 @@
 import argparse
-import re
 from PIL import Image
 from math import isqrt
 from io import BytesIO
+from utils import ResizeType
 
 def encodeRLE(input, output, resize,**_):
 
@@ -228,12 +228,6 @@ def main():
     # dest= is needed to handle empty parameter list, see https://bugs.python.org/issue29298
     subparsers = optParser.add_subparsers(title="Commands",required=True, dest="command")
 
-    def resize_type(s):
-        m = re.match('([0-9]+)?(?:x([0-9]+))?$',s)
-        if m is None:
-             raise argparse.ArgumentTypeError("invalid value")
-        return m.groups()
-
     encode_parser = subparsers.add_parser(
         'encode',
         aliases=['enc'],
@@ -243,7 +237,7 @@ def main():
     encode_parser.add_argument(
         "-s","--resize",
         required=False,
-        type=resize_type,
+        type=ResizeType(),
         default=(None,None),
         metavar="WIDTHxHEIGHT",
         help="output image size (only WIDTH or xHEIGHT are also allowed)"
