@@ -1,15 +1,26 @@
 import argparse
-import utils
+from wapp_tools import utils
+from wapp_tools.wapp_file import WappFile
 
 def create_cmd(args):
 
     print(args)
-    pass
+    print("NOT IMPLEMENTED")
+    exit(1)
 
 def extract_cmd(args):
 
     print("NOT IMPLEMENTED")
     exit(1)
+
+def info_cmd(args):
+
+    try:
+        w = WappFile(fh = args['input_file'])
+        print(w)
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        exit(1)
 
 
 def main():
@@ -34,7 +45,7 @@ def main():
     subparsers = optParser.add_subparsers(title="Commands",required=True, dest="command")
 
     create_parser = subparsers.add_parser(
-        'encode',
+        'create',
         aliases=['c'],
         help='Creates Fossil Hybrid application')
     create_parser.set_defaults(cmd_func=create_cmd)
@@ -51,7 +62,7 @@ def main():
 #        required=True,
         action=utils.FlatExtendAction,
         nargs='+',
-        type=utils.DirOrFileType('rb'),
+        type=utils.DirOrFileType(),
         metavar="DIR_OR_FILE",
         help="Compiled jerryscript file or dir containing files. This option can be specified multiple times."
         )
@@ -60,7 +71,7 @@ def main():
 #        required=True,
         action=utils.FlatExtendAction,
         nargs='+',
-        type=utils.DirOrFileType('rb'),
+        type=utils.DirOrFileType(),
         metavar="DIR_OR_FILE",
         help="Layout file or dir containing files. This option can be specified multiple times."
         )
@@ -69,7 +80,7 @@ def main():
 #        required=True,
         action=utils.FlatExtendAction,
         nargs='+',
-        type=utils.DirOrFileType('rb'),
+        type=utils.DirOrFileType(),
         metavar="DIR_OR_FILE",
         help="Image file or dir containing files. This option can be specified multiple times."
         )
@@ -78,7 +89,7 @@ def main():
 #        required=True,
         action=utils.FlatExtendAction,
         nargs='+',
-        type=utils.DirOrFileType('r'),
+        type=utils.DirOrFileType(),
         metavar="DIR_OR_FILE",
         help="Config file or dir containing files. This option can be specified multiple times."
         )
@@ -100,6 +111,19 @@ def main():
         required=True,
         metavar="OUTPUT_DIR",
         help="Output directory")
+    extract_parser.add_argument(
+        'input_file',
+        help="Input .wapp file")
+
+    info_parser = subparsers.add_parser(
+        'info',
+        aliases=['i'],
+        help='Prints information about .wapp file')
+    info_parser.set_defaults(cmd_func=info_cmd)
+    info_parser.add_argument(
+        'input_file',
+        type=argparse.FileType('rb'),
+        help="Input .wapp file")
 
     args = optParser.parse_args()
     args.cmd_func(vars(args))

@@ -4,6 +4,7 @@ import json
 import os
 import re
 from jsonschema import validate, ValidationError
+from wapp_tools.appmeta_schema import appmeta_schema
 
 class ResizeType(object):
 
@@ -16,12 +17,8 @@ class ResizeType(object):
 
 class AppMetaType(object):
 
-    schemaFile = "appmeta_schema.json"
-
     def __init__(self):
-        with open(self.schemaFile) as schema:
-            self.schema = json.load(schema)
-
+        pass
 
     def __call__(self,s):
 
@@ -34,7 +31,7 @@ class AppMetaType(object):
             raise argparse.ArgumentTypeError("not a valid JSON file")
 
         try:
-            validate(appmeta,self.schema)
+            validate(appmeta,appmeta_schema)
         except ValidationError as jsonerr:
             if len(jsonerr.relative_path) == 1 and jsonerr.relative_path[0] == "version":
                 raise argparse.ArgumentTypeError(f"format of version must be x.y.z")
@@ -52,11 +49,6 @@ class AppMetaType(object):
 
 class DirOrFileType(object):
 
-    def __init__(self, mode='r', encoding="utf-8"):
-
-        encoding = None if 'b' in mode else encoding
-        self.ft = argparse.FileType(mode, encoding = encoding)
-
     def __call__(self,param):
 
         if isinstance(param,str):
@@ -65,13 +57,12 @@ class DirOrFileType(object):
         files = []
         for p in param:
             if os.path.isdir(p):
-                files.extend(os.listdir(p))
+                files.extend(de.path for de in os.scandir(p) if de.is_file() )
             else:
                 files.append(p)
 
-        fileTypes = [self.ft(f) for f in files]
 
-        return fileTypes
+        return files
 
 def _deepIter(values):
     if not (isinstance(values,list) or isinstance(values,tuple)):

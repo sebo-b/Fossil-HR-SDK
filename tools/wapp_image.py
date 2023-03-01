@@ -2,7 +2,7 @@ import argparse
 from PIL import Image
 from math import isqrt
 from io import BytesIO
-from utils import ResizeType
+from wapp_tools.utils import ResizeType
 
 def encodeRLE(input, output, resize,**_):
 
