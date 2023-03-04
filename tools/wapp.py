@@ -6,9 +6,65 @@ from wapp_tools.wapp_file import WappFile, DIRECTORY
 
 def create_cmd(args):
 
-    print(args)
-    print("NOT IMPLEMENTED")
-    exit(1)
+    try:
+
+        w = WappFile(
+            appType = args.app_meta["type"],
+            appVersion = args.app_meta["version"],
+            displayName = args.app_meta["display_name"])
+
+        if args.verbose:
+            print(f"Application type: {args.app_meta['type']}")
+            print(f"Application version: {args.app_meta['version']}")
+            for k,v in args.app_meta['display_name'].items():
+                print(f"{k}: {v}")
+
+
+        dirs = [
+            ('script',DIRECTORY.SCRIPT),
+            ('layout',DIRECTORY.LAYOUT),
+            ('image',DIRECTORY.IMAGE),
+            ('config',DIRECTORY.CONFIG) ]
+
+        for d in dirs:
+
+            files = getattr(args,d[0])
+            if files is None:
+                continue
+
+            if args.verbose: print(f"\n{d[1].name}:")
+
+            wappDir = w.getDirectory(d[1])
+            openParams = {"mode": "r", "encoding": "utf-8"} if wappDir.isTextDir() else {"mode": "rb"}
+
+            for fn in files:
+
+                with open(fn,**openParams) as f:
+
+                    if wappDir.isTextDir():
+                        if args.verbose: print("  CHECKING AND MINIFYING JSON")
+                        content = json.load(f)
+                        content = json.dumps(content)
+                    else:
+                        content = f.read()
+
+                    bn = os.path.basename(fn)
+                    if args.verbose: print(f"  ADD {bn}")
+                    wappDir.addFile(bn,content)
+
+        if args.verbose:
+            meta = w.getMeta()
+            print(f"\nFile content size: {meta['content_size']}")
+            print(f"File content crc32: {hex(meta['crc32'])}")
+
+            print("\nWRITING WAPP FILE")
+
+        w.saveToFile(args.output)
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        exit(1)
+
 
 def extract_cmd(args):
 
@@ -79,24 +135,9 @@ def info_cmd(args):
         print(f"Error: {str(e)}")
         exit(1)
 
-
 def main():
 
     optParser = argparse.ArgumentParser(description="Create/extract Fossil Hybrid application")
-
-#    create / c
-#      --app_meta / -m (check with json schema)
-#           face/app: bool
-#           version: x.y.z
-#           display_name: string
-#           theme_class: string, optional
-#      --script / --scripts / -s  dir/ or jerry script file, multiple times (check if jerry)
-#      --layout / --layouts / -l dir/or layout file, multiple times (minify)
-#      --image / --images / -i dir/or image file, multiple times (check if image)
-#      --config / --configs / -c dir/or config file (minify)
-#      -o output_file
-#    extract / x
-#      -o output directory (creates if doesn't exist)
 
     # dest= is needed to handle empty parameter list, see https://bugs.python.org/issue29298
     subparsers = optParser.add_subparsers(title="Commands",required=True, dest="command")
@@ -154,6 +195,10 @@ def main():
         metavar="OUTPUT_FILE",
         help="Output file (.wapp)"
         )
+    create_parser.add_argument(
+        "-v","--verbose",
+        action='store_true',
+        help="Verbose output")
 
     extract_parser = subparsers.add_parser(
         'extract',

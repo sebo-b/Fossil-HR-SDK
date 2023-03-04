@@ -90,6 +90,8 @@ class WappDirectory:
     def isEmpty(self):
         return len(self.directoryBuf) == 0
 
+    def isTextDir(self):
+        return self.textDir
 
     def clean(self):
 
