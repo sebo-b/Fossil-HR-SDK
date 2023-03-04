@@ -249,8 +249,8 @@ class WappFile:
             f"Application type: {type}\n" \
             f"Application version: {meta['app_version']}\n"
 
-        if "display_name" in meta:
-            retStr += f"Display name: {meta['display_name']}\n"
+        if "display_name" in meta and "display_name" in meta["display_name"]:
+            retStr += f"Display name: {meta['display_name']['display_name']}\n"
 
         for d in DIRECTORY:
             dir = self.getDirectory(d)
@@ -272,10 +272,11 @@ class WappFile:
             "crc32": self.crc32
         }
 
+        ret["display_name"] = {}
         for f in self.getDirectory(DIRECTORY.DISPLAY_NAME):
-            if f.file_name == "display_name":
-                ret["display_name"] = f.content
-                break
+            ret["display_name"][f.file_name] = f.content
+        if not ret["display_name"]:
+            del ret["display_name"]
 
         return ret
 

@@ -10,8 +10,15 @@ appmeta_schema = \
                 {"type":"integer"}
             ]
         },
-        "display_name": {"type": "string"},
-        "theme_class": {"type": "string"}
+        "display_name": {
+            "type": "object",
+            "properties": {
+                "display_name": {"type": "string"},
+                "theme_class": {"type": "string"}
+            },
+            "additionalProperties": { "type": "string" },
+            "required": ["display_name"]
+        },
     },
     "required": [ "version", "type", "display_name"]
 }
