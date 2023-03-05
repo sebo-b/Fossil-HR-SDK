@@ -28,7 +28,7 @@ There are certain tools included in this repository:
 | Command | Description |
 | --- | --- |
 | wapp_image | Encodes/decodes images between PNG and Fossil Hybrid firmware format |
-| wapp | Packs/unpacks resources into Fossil Hybrid applications (WIP) |
+| wapp | Packs/unpacks resources into Fossil Hybrid applications |
 
 Each of the tool provides pretty descriptive help if called with `--help`. You can also find examples with usage of these apps in the [usage section](#tools-usage).
 
@@ -89,6 +89,30 @@ To get help:
 wapp_image -h
 wapp_image encode -h
 wapp_image decode -h
+```
+
+### wapp
+
+To print information about WAPP file:
+```
+wapp i myHRApp.wapp
+```
+To extract a WAPP file:
+```
+wapp x -o myHRAPP myHRApp.wapp
+```
+To create a WAPP file:
+```
+cd myHRAPP
+wapp c --app_meta app_meta.json --scripts ./script/ --layouts ./layout/ --images ./image/ -v -o ../myHRAPP_repacked.wapp
+cd ..
+```
+To get help:
+```
+wapp -h
+wapp create -h
+wapp extract -h
+wapp info -h
 ```
 
 # Documentation
