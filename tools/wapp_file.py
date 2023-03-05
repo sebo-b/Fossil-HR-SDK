@@ -106,9 +106,17 @@ class WappDirectory:
 
         self.wappFile.dirty = True
 
-        fileBuf = bytearray()
+        fileNameBin = bytearray(fileName.encode('utf-8'))
+        if len(fileNameBin) > 0xFE:     # 0xff - null terminator
+            print("WARNING: file name too long, trimming to 254 bytes: {bn}")
+            cutPoint = 0xFE
+            if fileNameBin[cutPoint] & 0xc0 == 0x80:    # mid of utf-8 seq
+                while fileNameBin[cutPoint] & 0xc0 == 0x80:
+                    cutPoint -= 1
+            fileNameBin = fileNameBin[:cutPoint]
+        fileNameBin.append(0)   # null terminator
 
-        fileNameBin = (fileName+'\x00').encode('utf-8')
+        fileBuf = bytearray()
         fileBuf.extend(pack('<B',len(fileNameBin)))
         fileBuf.extend(fileNameBin)
 

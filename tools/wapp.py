@@ -48,7 +48,17 @@ def create_cmd(args):
                     else:
                         content = f.read()
 
+                    if d[1] == DIRECTORY.IMAGE:
+                        if args.verbose: print("  CHECKING IMAGE")
+                        if not utils.FileChecker.detectImage(content).isImage():
+                            print("WARNING: file {fn} is not an image")
+                    elif d[1] == DIRECTORY.SCRIPT:
+                        if args.verbose: print("  CHECKING JERRY SCRIPT")
+                        if not utils.FileChecker.detectJerry(content).isJerry():
+                            print("WARNING: file {fn} is not a jerry script")
+
                     bn = os.path.basename(fn)
+
                     if args.verbose: print(f"  ADD {bn}")
                     wappDir.addFile(bn,content)
 

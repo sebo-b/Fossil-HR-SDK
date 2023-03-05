@@ -2,10 +2,11 @@ import argparse
 from PIL import Image
 from math import isqrt
 from io import BytesIO
-from wapp_tools.utils import ResizeType
+from wapp_tools.utils import ResizeType,FileChecker
 
-def encodeRLE(input, output, resize,**_):
+def encodeRLE(input, output, resize, verbose = False):
 
+    if verbose: print(f"Encoding to RAW, reading input image file")
     image = Image.open(input)
 
     if image.mode != 'RGBA' and image.mode != 'RGB':
@@ -15,12 +16,13 @@ def encodeRLE(input, output, resize,**_):
     width = int(resize[0] or image.width)
     height = int(resize[1] or image.height)
 
+    if verbose: print(f"Image resolution: {width}x{height}")
     if width > 0xFF or height > 0xFF:
-        print('Image is too big. Maximum resolution is 256x256')
+        print('ERROR: Image is too big. Maximum resolution is 256x256')
         exit(1)
 
     if width != image.width or height != image.height:
-        print(f"Resize from {image.width}x{image.height} to {width}x{height}")
+        if verbose: print(f"Resizing from {image.width}x{image.height} to {width}x{height}")
         image = image.resize((width, height),resample=Image.Resampling.NEAREST)
 
     outputBuf = bytearray()
@@ -49,13 +51,20 @@ def encodeRLE(input, output, resize,**_):
 
     outputBuf.extend([count,last_pixel])
 
+    if verbose: print(f"Saving file")
+
+    if len(outputBuf)+4 > 0xFFFF:
+        print("ERROR: output file too big (>64kB)")
+        exit(1)
+
     output.write(bytes([width,height]))
     output.write(outputBuf)
     output.write(bytes([0xFF,0xFF]))
 
 
-def encodeRAW(input, output, resize, **_):
+def encodeRAW(input, output, resize, verbose = False):
 
+    if verbose: print(f"Encoding to RAW, reading input image file")
     image = Image.open(input)
 
     if image.mode != 'RGBA' and image.mode != 'RGB':
@@ -65,12 +74,14 @@ def encodeRAW(input, output, resize, **_):
     width = int(resize[0] or image.width)
     height = int(resize[1] or image.height)
 
+    if verbose: print(f"Image resolution: {width}x{height}")
+
     if width != height:
-        print('image must be square for raw compression')
+        print('ERROR: image must be square for raw compression')
         exit(1)
 
     if width != image.width or height != image.height:
-        print(f"Resize from {image.width}x{image.height} to {width}x{height}")
+        if verbose: print(f"Resizing from {image.width}x{image.height} to {width}x{height}")
         image = image.resize((width, height),resample=Image.Resampling.NEAREST)
 
     outputBuf = bytearray()
@@ -95,6 +106,11 @@ def encodeRAW(input, output, resize, **_):
     if (shiftCounter != 0):
         outputBuf.append(shiftReg)
 
+    if len(outputBuf) > 0xFFFF:
+        print("ERROR: output file too big (>64kB)")
+        exit(1)
+
+    if verbose: print(f"Saving file")
     output.write(outputBuf)
 
 
@@ -102,7 +118,7 @@ def encodeRAW(input, output, resize, **_):
 def bitscale2to8(c):
     return 0x55 * (c & 3)
 
-def decodeRAW(input, output, **_):
+def decodeRAW(input, output, verbose = False):
 
     size = 0
     def rawEncoder():
@@ -115,23 +131,32 @@ def decodeRAW(input, output, **_):
                     yield bitscale2to8(b >> 6)
                 b <<= 2
 
+    if verbose: print(f"Decoding RAW image")
+
     pixels = bytes(rawEncoder())
 
     w = isqrt(size)
     if w*w != size:
-        print("Faulty image file - wrong file size")
+        print("ERROR: Faulty image file - wrong file size")
         exit(1)
 
     w <<= 1     # 4 pixels per byte, squared
 
+    if verbose: print(f"Image resolution: {w}x{w}")
     image = Image.frombuffer('RGB', (w, w), pixels)
+
+    if verbose: print(f"Saving to PNG")
     image.transpose(Image.Transpose.ROTATE_180).save(output, 'PNG')
 
-def decodeRLE(input, output, **_):
+def decodeRLE(input, output, verbose = False):
 
     try:
 
+        if verbose: print(f"Decoding RLE image")
+
         (width,height) = input.read(2)      # can throw ValueError
+
+        if verbose: print(f"Image resolution: {width}x{height}")
 
         image_pixels = bytearray()
         rep = None
@@ -148,63 +173,60 @@ def decodeRLE(input, output, **_):
             (rep, byte) = r     # can throw ValueError
 
     except ValueError:
-        print("Faulty image file - wrong file size")
+        print("ERROR: Faulty image file - wrong file size")
         exit(1)
 
     if rep != 0xFF or byte != 0xFF:
-        print('Faulty image file, missing 0xFF 0xFF at end')
+        print('ERROR: Faulty image file, missing 0xFF 0xFF at end')
         exit(1)
 
     image = Image.frombuffer('RGBA', (width, height), image_pixels)
+    if verbose: print(f"Saving to PNG")
     image.save(output, 'PNG')
 
 def decode(args):
 
-    if args['format'] == 'auto':
+    if args.format == 'auto':
 
         # I don't want to use seek and tell as we can get streams which are not seekable
-        MAX_FILE_SIZE = 4+0xFF*0xFF*2   #256x256x2bytes + 2byte size + 2byte end marker
-        buffer = args['input'].read(MAX_FILE_SIZE+1)
+        MAX_FILE_SIZE = 0xFFFF   #max size of file inside wapp file
+        buffer = args.input.read(MAX_FILE_SIZE+1)
         if len(buffer) > MAX_FILE_SIZE:
-            print("Format autodetection failed, file is too big.")
+            print("ERROR: Format autodetection failed, the file is too big.")
             exit(1)
 
-        w = isqrt(len(buffer))
-        possibleRAW = (w*w == len(buffer))
+        result = FileChecker.detectImage(buffer,quick=False)
 
-        possibleRLE = (len(buffer) % 2 == 0)
-        if possibleRLE:
-            possibleRLE = buffer[-2:] == b'\xff\xff'
-        if possibleRLE:
-            numOfPixels = sum(buffer[2:-2:2])
-            possibleRLE = (buffer[0]*buffer[1] == numOfPixels)
-
-        if not possibleRAW and not possibleRLE:
-            print("Format autodetection failed, unknown file format.")
+        if not result.isImage():
+            print("ERROR: Format autodetection failed, unknown file format.")
             exit(1)
-        elif possibleRLE and possibleRAW:
-            print("RLE format detected, but it may be RAW. Decoding as RLE.")
-            args['format'] = 'rle'
-        elif possibleRLE:
-            print("RLE format detected.")
-            args['format'] = 'rle'
+        elif result.possibleRLE and result.possibleRAW:
+            if args.verbose: print("RLE format detected, but it may be RAW. Decoding as RLE.")
+            args.format = 'rle'
+        elif result.possibleRLE:
+            if args.verbose: print("RLE format detected.")
+            args.format = 'rle'
         else:
-            print("RAW format detected.")
-            args['format'] = 'raw'
+            if args.verbose: print("RAW format detected.")
+            args.format = 'raw'
 
-        args['input'] = BytesIO(buffer)
+        args.input = BytesIO(buffer)
 
-    if args['format'] == 'rle':
-        decodeRLE(**args)
+    if args.format == 'rle':
+        decodeFunc = decodeRLE
     else:
-        decodeRAW(**args)
+        decodeFunc = decodeRAW
+
+    decodeFunc(args.input, args.output, args.verbose)
 
 def encode(args):
 
-    if args['format'] == 'rle':
-        encodeRLE(**args)
+    if args.format == 'rle':
+        encodeFunc = encodeRLE
     else:
-        encodeRAW(**args)
+        encodeFunc = encodeRAW
+
+    encodeFunc(args.input,args.output,args.resize,args.verbose)
 
 
 def main():
@@ -212,6 +234,10 @@ def main():
     optParser = argparse.ArgumentParser(description="Encodes/decodes image between PNG and Fossil Hybrid watch format")
 
     common_options = argparse.ArgumentParser(add_help=False)
+    common_options.add_argument(
+        "-v","--verbose",
+        action='store_true',
+        help="Verbose output")
     common_options.add_argument(
         "-i","--input",
         required=True,
@@ -263,7 +289,7 @@ def main():
         help="Format of the input image, default autodetect format")
 
     args = optParser.parse_args()
-    args.cmd_func(vars(args))
+    args.cmd_func(args)
 
 
 if __name__ == '__main__':

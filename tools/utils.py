@@ -5,6 +5,50 @@ import os
 import re
 from jsonschema import validate, ValidationError
 from wapp_tools.appmeta_schema import appmeta_schema
+from math import isqrt
+
+
+class FileChecker:
+
+    @staticmethod
+    def detectImage(buffer,quick = True):
+
+        class DetectedImage:
+            possibleRLE = False
+            possibleRAW = False
+            def isImage(self):
+                return self.possibleRLE or self.possibleRAW
+
+        ret = DetectedImage()
+
+        if len(buffer) > 0xFFFF:    #max file size
+            return ret
+
+        w = isqrt(len(buffer))
+        ret.possibleRAW = (w*w == len(buffer))
+
+        ret.possibleRLE = (len(buffer) % 2 == 0)
+        if ret.possibleRLE:
+            ret.possibleRLE = buffer[-2:] == b'\xff\xff'
+        if ret.possibleRLE and not quick:
+            numOfPixels = sum(buffer[2:-2:2])
+            ret.possibleRLE = (buffer[0]*buffer[1] == numOfPixels)
+
+        return ret
+
+    @staticmethod
+    def detectJerry(buffer):
+
+        class DetectedJerry:
+            def __init__(self,v):
+                self.value = bool(v)
+            def __bool__(self):
+                return self.value
+            def isJerry(self):
+                return bool(self)
+
+        return DetectedJerry(buffer[:4] == b'JRRY')
+
 
 class ResizeType(object):
 
