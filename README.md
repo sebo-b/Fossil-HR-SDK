@@ -30,7 +30,7 @@ There are certain tools included in this repository:
 | wapp_image | Encodes/decodes images between PNG and Fossil Hybrid firmware format |
 | wapp | Packs/unpacks resources into Fossil Hybrid applications |
 
-Each of the tool provides pretty descriptive help if called with `--help`. You can also find examples with usage of these apps in the [usage section](#tools-usage).
+Each of the tool provides pretty descriptive help if called with `--help`. You can also find manual with examples of the usage of these apps in the [wiki](../../wiki/wapp.md).
 
 ## Installing tools
 
@@ -57,65 +57,10 @@ wapp_image: error: the following arguments are required: {encode,enc,decode,dec}
 
 If you want to run any of the tool without venv activation (e.g. from Makefile) you can simply call:
 ```
-ROOT_PATH/Fossil-Tools/.venv/bin/wapp_image
-```
-
-## Tools usage
-
-### wapp_image
-
-To convert PNG into RLE:
-```
-wapp_image encode -i icon_home.png -o icon_home
-```
-To convert and scale PNG into RLE:
-```
-wapp_image encode -i icon_home.png -o icon_home -s 32x32
-```
-To convert PNG into RAW (note that in almost every case RLE format produces smaller files):
-```
-wapp_image encode -i background.png -o background.raw -f raw
-```
-To convert RLE or RAW (autodetection used) back to PNG:
-```
-wapp_image decode -i background -o background.png
-```
-To convert RAW (no autodetection) back to PNG:
-```
-wapp_image decode -i background -o background.png -f raw
-```
-To get help:
-```
-wapp_image -h
-wapp_image encode -h
-wapp_image decode -h
-```
-
-### wapp
-
-To print information about WAPP file:
-```
-wapp i myHRApp.wapp
-```
-To extract a WAPP file:
-```
-wapp x -o myHRAPP myHRApp.wapp
-```
-To create a WAPP file:
-```
-cd myHRAPP
-wapp c --app_meta app_meta.json --scripts ./script/ --layouts ./layout/ --images ./image/ -v -o ../myHRAPP_repacked.wapp
-cd ..
-```
-To get help:
-```
-wapp -h
-wapp create -h
-wapp extract -h
-wapp info -h
+{ROOT_PATH}/Fossil-Tools/.venv/bin/wapp_image
 ```
 
 # Documentation
 
-TODO
+Documentation is available in [the wiki](../../wiki)
 
