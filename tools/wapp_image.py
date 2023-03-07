@@ -4,19 +4,47 @@ from math import isqrt
 from io import BytesIO
 from wapp_tools.utils import ResizeType,FileChecker
 
+def _getPixel(image,x,y):
+
+
+    srcPixel = image.getpixel((x, y))
+    dstPixel = 0
+
+    if image.mode == 'L':
+
+        dstPixel = srcPixel >> 6
+
+    elif image.mode == 'LA':
+
+        dstPixel = srcPixel[0] >> 6
+        alpha = ~(srcPixel[1]) & 0xc0
+        dstPixel |= (alpha >> 4)
+
+    else:   #RGB or RGBA
+
+        dstPixel = int((srcPixel[0] + srcPixel[1] + srcPixel[2]) / 3) >> 6
+
+        if image.mode == 'RGBA':
+            alpha = ~(srcPixel[3]) & 0xc0
+            dstPixel |= (alpha >> 4)
+
+    return dstPixel
+
 def encodeRLE(input, output, resize, verbose = False):
 
-    if verbose: print(f"Encoding to RAW, reading input image file")
+    if verbose: print(f"Encoding to RLE, reading input image file")
     image = Image.open(input)
 
-    if image.mode != 'RGBA' and image.mode != 'RGB':
-        print('image bands have to be RGB or RGBA')
+    if verbose: print(f"Image mode: {image.mode}")
+    if image.mode not in ['RGBA','RGB','L','LA']:
+        print('Error: PNG color space has to be RGB/24, RGBA/32b, gray/8 or gray+alpha/16')
         exit(1)
 
     width = int(resize[0] or image.width)
     height = int(resize[1] or image.height)
 
-    if verbose: print(f"Image resolution: {width}x{height}")
+    if verbose: print(f"Image resolution: {image.width}x{image.height}")
+    if verbose: print(f"Target resolution: {width}x{height}")
     if width > 0xFF or height > 0xFF:
         print('ERROR: Image is too big. Maximum resolution is 256x256')
         exit(1)
@@ -26,30 +54,24 @@ def encodeRLE(input, output, resize, verbose = False):
         image = image.resize((width, height),resample=Image.Resampling.NEAREST)
 
     outputBuf = bytearray()
-    last_pixel = None
+    lastPixel = None
     count = 1
 
     for y in range(0, height):
         for x in range(0, width):
 
-            pixelRGB = image.getpixel((x, y))
+            pixel = _getPixel(image,x,y)
 
-            pixel = int((pixelRGB[0] + pixelRGB[1] + pixelRGB[2]) / 3) >> 6
-
-            if len(pixelRGB) > 3:   # RGBA
-                alpha = ~(pixelRGB[3]) & 0xc0
-                pixel |= (alpha >> 4)
-
-            if last_pixel is None:
-                last_pixel = pixel
-            elif last_pixel == pixel and count < 255:
+            if lastPixel is None:
+                lastPixel = pixel
+            elif lastPixel == pixel and count < 255:
                 count += 1
             else:
-                outputBuf.extend([count,last_pixel])
-                last_pixel = pixel
+                outputBuf.extend([count,lastPixel])
+                lastPixel = pixel
                 count = 1
 
-    outputBuf.extend([count,last_pixel])
+    outputBuf.extend([count,lastPixel])
 
     if verbose: print(f"Saving file")
 
@@ -67,8 +89,9 @@ def encodeRAW(input, output, resize, verbose = False):
     if verbose: print(f"Encoding to RAW, reading input image file")
     image = Image.open(input)
 
-    if image.mode != 'RGBA' and image.mode != 'RGB':
-        print('image bands have to be RGB or RGBA')
+    if verbose: print(f"Image mode: {image.mode}")
+    if image.mode not in ['RGBA','RGB','L','LA']:
+        print('Error: PNG color space has to be RGB/24, RGBA/32b, gray/8 or gray+alpha/16')
         exit(1)
 
     width = int(resize[0] or image.width)
@@ -85,25 +108,24 @@ def encodeRAW(input, output, resize, verbose = False):
         image = image.resize((width, height),resample=Image.Resampling.NEAREST)
 
     outputBuf = bytearray()
-    shiftCounter = 0
+    shiftCounter = 6
     shiftReg = 0
 
     for y in reversed(range(0, height)):
         for x in reversed(range(0, width)):
 
-            pixel = image.getpixel((x, y))
-            grey = int((pixel[0] + pixel[1] + pixel[2]) / 3) & 0xc0
+            pixel = _getPixel(image,x,y) & 0x03 # drop alpha
 
-            shiftReg |= grey >> shiftCounter
+            shiftReg |= pixel << shiftCounter
 
-            if (shiftCounter == 6):
+            if (shiftCounter == 0):
                 outputBuf.append(shiftReg)
                 shiftReg = 0
-                shiftCounter = 0
+                shiftCounter = 6
             else:
-                shiftCounter += 2
+                shiftCounter -= 2
 
-    if (shiftCounter != 0):
+    if (shiftCounter != 6):
         outputBuf.append(shiftReg)
 
     if len(outputBuf) > 0xFFFF:
@@ -243,7 +265,7 @@ def main():
         required=True,
         metavar="INPUT_FILE",
         type=argparse.FileType('rb'),
-        help="Input file (RGBA PNG)")
+        help="Input file")
     common_options.add_argument(
         "-o","--output",
         required=True,
