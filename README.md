@@ -62,5 +62,5 @@ If you want to run any of the tool without venv activation (e.g. from Makefile) 
 
 # Documentation
 
-Documentation is available in [the wiki](../../wiki)
+The documentation is available in [the wiki](../../wiki)
 
